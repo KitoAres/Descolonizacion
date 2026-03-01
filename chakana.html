@@ -83,11 +83,25 @@ canvas {
     cursor: pointer;
     font-weight: bold;
     transition: 0.2s;
+    width: 100%; /* Botones completos para que se vea mejor */
 }
 
 .modal button:hover {
     background: white;
     box-shadow: 0 0 10px white;
+}
+
+/* Estilo para el botón de audio específico */
+#playAudioBtn {
+    background: #ff00ff; /* Fucsia para destacar */
+    color: white;
+    display: none; /* Oculto por defecto */
+}
+
+#playAudioBtn:hover {
+    background: white;
+    color: #ff00ff;
+    box-shadow: 0 0 10px #ff00ff;
 }
 
 .virus {
@@ -132,6 +146,9 @@ canvas {
 <div class="modal" id="modal">
     <h2 id="modalTitle"></h2>
     <p id="modalText"></p>
+    
+    <button id="playAudioBtn" onclick="playNodeAudio()">🎵 Escuchar Audio</button>
+    
     <button onclick="closeModal()">Cerrar</button>
 </div>
 
@@ -152,8 +169,9 @@ window.addEventListener('resize', resize);
 resize();
 
 let virusActivo = false;
+let currentAudioSrc = null; // Guardamos el audio actual
 
-// Tus nodos originales. SOLO se agregó el nombre de la canción en los 3 nodos correspondientes.
+// Tus nodos originales con los 4 audios
 const nodes = [
     {baseX: 200, baseY: 200, title: "Pueblo Aymara", text: "La relacionalidad y la comunidad son base de su cosmovisión.", vx: 0, vy: 0, vertexIndex: 0, audio: "Jilgueroflores.mp3" }, 
     {baseX: 500, baseY: 150, title: "Suma Qamaña", text: "Vivir Bien: Buscar el equilibrio entre la tecnología y la vida.", vx: 0, vy: 0, vertexIndex: 1 },
@@ -165,7 +183,7 @@ const nodes = [
     {baseX: 350, baseY: 450, title: "Juventud Digital", text: "Puede viralizar prejuicio o conciencia.", vx: 0, vy: 0, vertexIndex: 11 }, 
     {baseX: 750, baseY: 500, title: "Relacionalidad", text: "Nada existe aislado; todo está conectado.", vx: 0, vy: 0, vertexIndex: 15 }, 
     {baseX: 500, baseY: 150, title: "Ayni", text: "Reciprocidad: el conocimiento en la red se comparte, no se acapara.", vx: 0, vy: 0, vertexIndex: 16 },
-    {baseX: 1000, baseY: 420, title: "Interculturalidad", text: "No es tolerar, es convivir en igualdad.", vx: 0, vy: 0, vertexIndex: 17 },
+    {baseX: 1000, baseY: 420, title: "Interculturalidad", text: "No es tolerar, es convivir en igualdad.", vx: 0, vy: 0, vertexIndex: 17, audio: "ojosazules.mp3" },
     {baseX: 500, baseY: 150, title: "Ch'ixi", text: "Nuestra identidad es mixta, manchada y poderosa.", vx: 0, vy: 0, vertexIndex: 19 }
 ];
 
@@ -333,20 +351,37 @@ canvas.addEventListener("click", function(e) {
     });
 });
 
-// Función modificada para reproducir la música
+// Función modificada para mostrar la ventana y el botón
 function openModal(title, text, audioSrc) {
     document.getElementById("modalTitle").innerText = title;
     document.getElementById("modalText").innerText = text;
-    document.getElementById("modal").classList.add("active");
-
+    
+    // Detenemos música si hubiera una sonando antes de abrir otra
     const player = document.getElementById("audio-player");
     if (player) {
-        player.pause(); // Detenemos cualquier audio anterior
-        player.currentTime = 0; // Lo reiniciamos a cero
-        if (audioSrc) {
-            player.src = audioSrc; // Le asignamos tu MP3
-            player.play(); // ¡Que suene!
-        }
+        player.pause();
+        player.currentTime = 0;
+    }
+
+    // Lógica para mostrar u ocultar el botón de audio
+    const btnAudio = document.getElementById("playAudioBtn");
+    if (audioSrc) {
+        currentAudioSrc = audioSrc; // Guardamos el link de la canción
+        btnAudio.style.display = "block"; // Mostramos el botón
+    } else {
+        currentAudioSrc = null;
+        btnAudio.style.display = "none"; // Ocultamos si no hay canción
+    }
+
+    document.getElementById("modal").classList.add("active");
+}
+
+// Nueva función que se activa SOLO cuando el usuario hace clic en el botón de audio
+function playNodeAudio() {
+    const player = document.getElementById("audio-player");
+    if (player && currentAudioSrc) {
+        player.src = currentAudioSrc;
+        player.play().catch(e => console.error("Error al reproducir audio:", e));
     }
 }
 
