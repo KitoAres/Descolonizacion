@@ -1,0 +1,2 @@
+# Descolonizacion
+Descoloniza tu mente. 
