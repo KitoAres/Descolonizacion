@@ -138,6 +138,8 @@ canvas {
 <div class="virus" onclick="toggleVirus()" id="virusBtn">🦠</div>
 <div class="footer-message">“En la red de la vida, ninguna cultura es un error del sistema.”</div>
 
+<audio id="audio-player"></audio>
+
 <script>
 const canvas = document.getElementById("network");
 const ctx = canvas.getContext("2d");
@@ -151,20 +153,20 @@ resize();
 
 let virusActivo = false;
 
-// Se conservan todos tus nodos originales y se añaden 5 nuevos para lograr la simetría de la Chakana.
+// Tus nodos originales. SOLO se agregó el nombre de la canción en los 3 nodos correspondientes.
 const nodes = [
-    {baseX: 200, baseY: 200, title: "Pueblo Aymara", text: "La relacionalidad y la comunidad son base de su cosmovisión.", vx: 0, vy: 0, vertexIndex: 0 }, 
-    {baseX: 500, baseY: 150, title: "Suma Qamaña", text: "Vivir Bien: Buscar el equilibrio entre la tecnología y la vida.", vx: 0, vy: 0, vertexIndex: 1 }, // NUEVO
-    {baseX: 500, baseY: 150, title: "Pueblo Quechua", text: "Organización colectiva y sabiduría ancestral.", vx: 0, vy: 0, vertexIndex: 2 }, 
+    {baseX: 200, baseY: 200, title: "Pueblo Aymara", text: "La relacionalidad y la comunidad son base de su cosmovisión.", vx: 0, vy: 0, vertexIndex: 0, audio: "Jilgueroflores.mp3" }, 
+    {baseX: 500, baseY: 150, title: "Suma Qamaña", text: "Vivir Bien: Buscar el equilibrio entre la tecnología y la vida.", vx: 0, vy: 0, vertexIndex: 1 },
+    {baseX: 500, baseY: 150, title: "Pueblo Quechua", text: "Organización colectiva y sabiduría ancestral.", vx: 0, vy: 0, vertexIndex: 2, audio: "Tiempoaltiempo.mp3" }, 
     {baseX: 800, baseY: 250, title: "Julian Apaza", text: "Símbolo de resistencia y memoria histórica.", vx: 0, vy: 0, vertexIndex: 5 }, 
-    {baseX: 500, baseY: 150, title: "Taypi", text: "El centro de encuentro, donde convergen diferentes mundos digitales.", vx: 0, vy: 0, vertexIndex: 6 }, // NUEVO
-    {baseX: 1100, baseY: 200, title: "Bartolina Sisa", text: "Liderazgo femenino y lucha anticolonial.", vx: 0, vy: 0, vertexIndex: 8 }, 
-    {baseX: 500, baseY: 150, title: "Pachamama", text: "Respeto integral por nuestro entorno, tanto material como virtual.", vx: 0, vy: 0, vertexIndex: 10 }, // NUEVO
+    {baseX: 500, baseY: 150, title: "Taypi", text: "El centro de encuentro, donde convergen diferentes mundos digitales.", vx: 0, vy: 0, vertexIndex: 6 },
+    {baseX: 1100, baseY: 200, title: "Bartolina Sisa", text: "Liderazgo femenino y lucha anticolonial.", vx: 0, vy: 0, vertexIndex: 8, audio: "juanazurduy.mp3" }, 
+    {baseX: 500, baseY: 150, title: "Pachamama", text: "Respeto integral por nuestro entorno, tanto material como virtual.", vx: 0, vy: 0, vertexIndex: 10 },
     {baseX: 350, baseY: 450, title: "Juventud Digital", text: "Puede viralizar prejuicio o conciencia.", vx: 0, vy: 0, vertexIndex: 11 }, 
     {baseX: 750, baseY: 500, title: "Relacionalidad", text: "Nada existe aislado; todo está conectado.", vx: 0, vy: 0, vertexIndex: 15 }, 
-    {baseX: 500, baseY: 150, title: "Ayni", text: "Reciprocidad: el conocimiento en la red se comparte, no se acapara.", vx: 0, vy: 0, vertexIndex: 16 }, // NUEVO
+    {baseX: 500, baseY: 150, title: "Ayni", text: "Reciprocidad: el conocimiento en la red se comparte, no se acapara.", vx: 0, vy: 0, vertexIndex: 16 },
     {baseX: 1000, baseY: 420, title: "Interculturalidad", text: "No es tolerar, es convivir en igualdad.", vx: 0, vy: 0, vertexIndex: 17 },
-    {baseX: 500, baseY: 150, title: "Ch'ixi", text: "Nuestra identidad es mixta, manchada y poderosa.", vx: 0, vy: 0, vertexIndex: 19 } // NUEVO
+    {baseX: 500, baseY: 150, title: "Ch'ixi", text: "Nuestra identidad es mixta, manchada y poderosa.", vx: 0, vy: 0, vertexIndex: 19 }
 ];
 
 // Vértices geométricos de la Chakana (Cruz Andina)
@@ -317,6 +319,7 @@ function drawSystem() {
     requestAnimationFrame(drawSystem);
 }
 
+// Al hacer clic, le pasamos también la info del audio a la ventana
 canvas.addEventListener("click", function(e) {
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
@@ -325,19 +328,35 @@ canvas.addEventListener("click", function(e) {
     nodes.forEach(node => {
         const dist = Math.sqrt((mouseX-node.x)**2 + (mouseY-node.y)**2);
         if(dist < 20) {
-            openModal(node.title, node.text);
+            openModal(node.title, node.text, node.audio);
         }
     });
 });
 
-function openModal(title, text) {
+// Función modificada para reproducir la música
+function openModal(title, text, audioSrc) {
     document.getElementById("modalTitle").innerText = title;
     document.getElementById("modalText").innerText = text;
     document.getElementById("modal").classList.add("active");
+
+    const player = document.getElementById("audio-player");
+    if (player) {
+        player.pause(); // Detenemos cualquier audio anterior
+        player.currentTime = 0; // Lo reiniciamos a cero
+        if (audioSrc) {
+            player.src = audioSrc; // Le asignamos tu MP3
+            player.play(); // ¡Que suene!
+        }
+    }
 }
 
+// Al cerrar la ventana, se apaga la música
 function closeModal() {
     document.getElementById("modal").classList.remove("active");
+    const player = document.getElementById("audio-player");
+    if (player) {
+        player.pause();
+    }
 }
 
 function toggleVirus() {
