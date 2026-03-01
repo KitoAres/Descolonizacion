@@ -144,6 +144,43 @@ h1 {
     box-shadow: 0 0 20px #ff00ff !important;
 }
 
+/* Estilo para el botón de audio del nodo (fucsia) */
+#playNodeAudioBtn {
+    background: #ff00ff;
+    color: white;
+    display: none;
+    margin-bottom: 10px;
+}
+
+#playNodeAudioBtn:hover {
+    background: white;
+    color: #ff00ff;
+    box-shadow: 0 0 10px #ff00ff;
+}
+
+/* Botón flotante para iniciar la experiencia ambiental */
+#ambientAudioBtn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: transparent;
+    border: 1px solid cyan;
+    color: cyan;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    z-index: 10;
+    font-weight: bold;
+    transition: 0.3s;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+#ambientAudioBtn:hover {
+    background: cyan;
+    color: black;
+    box-shadow: 0 0 15px cyan;
+}
+
 </style>
 </head>
 
@@ -161,24 +198,38 @@ h1 {
     <img id="modalImage" src="" alt="Contenido del nodo" style="display: none;">
     <p id="modalText"></p>
     
+    <button id="playNodeAudioBtn" onclick="playNodeAudio()">🎵 Escuchar Audio</button>
+    
     <button id="modalLinkBtn" class="btn-red" style="display: none;" onclick="goToLink()">¡Explorar la Red Cósmica!</button>
     <button onclick="closeModal()">Cerrar</button>
 </div>
 
+<button id="ambientAudioBtn" onclick="toggleAmbientAudio()">🎵 Iniciar Experiencia</button>
+
+<audio id="audio-background" loop>
+    <source src="ojosazules.mp3" type="audio/mpeg">
+</audio>
 <audio id="audio-player"></audio>
 
 <script>
 const container = document.getElementById("mural-container");
 const player = document.getElementById("audio-player");
-let currentLink = ""; // Variable para guardar la URL a donde viajaremos
+const bgPlayer = document.getElementById("audio-background");
 
-// Definición de los nodos interactivos. Aquí le añadí la imagen y el link solo a la Chakana.
+// Ajustamos el volumen del fondo para que sea suave (30%)
+bgPlayer.volume = 0.3; 
+
+let currentLink = ""; // Variable para guardar la URL a donde viajaremos
+let currentNodeAudioSrc = null; // Variable para guardar el audio del nodo actual
+let isAmbientPlaying = false; // Estado del audio de fondo
+
+// Definición de los nodos interactivos. Añadí leidy.mp3 y elcondorpasa.mp3
 const nodes = [
     { top: 10, left: 10, title: "EL MENSAJE", text: "¡Bienvenido! Este es el punto de partida. Una invitación a desconectar de los prejuicios y conectar con el mundo que nos rodea." },
-    { top: 40, left: 80, title: "LA VOZ", text: "El espíritu y la fuerza de la mujer andina, un puente entre el pasado y el presente." },
+    { top: 40, left: 80, title: "LA VOZ", text: "El espíritu y la fuerza de la mujer andina, un puente entre el pasado y el presente.", audio: "leidy.mp3" },
     { top: 80, left: 20, title: "LA DANZA", text: "La Diablada, la danza que une cielo y tierra, bien y mal, en un carnaval de vida." },
     { top: 50, left: 50, title: "LA RED CÓSMICA", text: "La Cruz Andina, un mapa para conectar con los tres mundos. Escanea el código o entra a la red.", image: "Image_4.jpeg", link: "chakana.html" },
-    { top: 30, left: 15, title: "LA ENERGÍA", text: "Las fuerzas que fluyen y nos unen. Tu mundo te espera." },
+    { top: 30, left: 15, title: "LA ENERGÍA", text: "Las fuerzas que fluyen y nos unen. Tu mundo te espera.", audio: "elcondorpasa.mp3" },
     { top: 85, left: 65, title: "LA LLAMA", text: "La llama, compañera vital en los Andes. Escucha su llamado." }
 ];
 
@@ -189,13 +240,13 @@ nodes.forEach((node, index) => {
     nodeEl.style.top = `${node.top}%`;
     nodeEl.style.left = `${node.left}%`;
     
-    // Ahora pasamos la imagen y el link si existen, o indefinido si no.
-    nodeEl.onclick = () => openModal(node.title, node.text, node.image, node.link);
+    // Ahora pasamos la imagen, link y el audio
+    nodeEl.onclick = () => openModal(node.title, node.text, node.image, node.link, node.audio);
     container.appendChild(nodeEl);
 });
 
 // Función modificada para abrir la ventana modal
-function openModal(title, text, image, link) {
+function openModal(title, text, image, link, audioSrc) {
     document.getElementById("modalTitle").innerText = title;
     document.getElementById("modalText").innerText = text;
 
@@ -216,12 +267,63 @@ function openModal(title, text, image, link) {
     } else {
         linkBtn.style.display = "none";
     }
+    
+    // ¿Tiene Audio? Preparamos el botón fucsia.
+    const audioBtn = document.getElementById("playNodeAudioBtn");
+    if (audioSrc) {
+        currentNodeAudioSrc = audioSrc;
+        audioBtn.style.display = "block";
+    } else {
+        currentNodeAudioSrc = null;
+        audioBtn.style.display = "none";
+    }
 
     document.getElementById("modal").classList.add("active");
 
-    // Detener y reiniciar cualquier audio previo
+    // Detener y reiniciar cualquier audio DE NODO previo
     player.pause();
     player.currentTime = 0;
+}
+
+// Función para reproducir el audio específico del nodo
+function playNodeAudio() {
+    if (player && currentNodeAudioSrc) {
+        // Pausamos el fondo ambiental para que no se mezclen los audios
+        if (isAmbientPlaying) {
+            bgPlayer.pause();
+        }
+        
+        player.src = currentNodeAudioSrc;
+        player.play().catch(e => console.error("Error al reproducir audio:", e));
+        
+        // Cuando termine el audio del nodo, si el fondo estaba activo, lo retomamos
+        player.onended = function() {
+            if (isAmbientPlaying) {
+                bgPlayer.play();
+            }
+        };
+    }
+}
+
+// Función para prender o apagar la música ambiental (Ojos Azules)
+function toggleAmbientAudio() {
+    const btn = document.getElementById("ambientAudioBtn");
+    if (isAmbientPlaying) {
+        bgPlayer.pause();
+        isAmbientPlaying = false;
+        btn.innerText = "🎵 Iniciar Experiencia";
+        btn.style.background = "transparent";
+        btn.style.color = "cyan";
+    } else {
+        // Si hay un audio de nodo sonando, lo paramos primero
+        player.pause(); 
+        
+        bgPlayer.play().catch(e => console.error("Error al iniciar ambiente:", e));
+        isAmbientPlaying = true;
+        btn.innerText = "🔇 Pausar Experiencia";
+        btn.style.background = "cyan";
+        btn.style.color = "black";
+    }
 }
 
 // Función para teletransportar al usuario a la red de la Chakana
@@ -234,7 +336,15 @@ function goToLink() {
 // Función para cerrar la ventana modal
 function closeModal() {
     document.getElementById("modal").classList.remove("active");
-    player.pause(); // Detener la música al cerrar
+    // Al cerrar, detenemos el audio del nodo
+    if (player) {
+        player.pause();
+        
+        // Y si el ambiente estaba encendido antes de escuchar el nodo, que vuelva a sonar
+        if (isAmbientPlaying && bgPlayer.paused) {
+             bgPlayer.play();
+        }
+    }
 }
 </script>
 
