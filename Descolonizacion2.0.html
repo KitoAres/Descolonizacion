@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Descolonizando la Red</title>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    /* Imagen de fondo con un overlay oscuro para no perder legibilidad */
+    background: linear-gradient(rgba(10, 10, 15, 0.85), rgba(0, 0, 5, 0.95)), 
+                url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    overflow: hidden;
+}
+
+h1 {
+    position: absolute;
+    top: 20px;
+    width: 100%;
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px cyan;
+    z-index: 10;
+}
+
+.subtitle {
+    position: absolute;
+    top: 60px;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: #ccc;
+    z-index: 10;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(15, 15, 20, 0.95);
+    padding: 25px;
+    border-radius: 12px;
+    width: 340px;
+    box-shadow: 0 0 30px cyan;
+    display: none;
+    transition: 0.3s ease;
+    z-index: 20;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.modal.active {
+    display: block;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.modal h2 {
+    margin-bottom: 10px;
+    color: cyan;
+    text-shadow: 0 0 5px cyan;
+}
+
+.modal button {
+    margin-top: 15px;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    background: cyan;
+    color: black;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.modal button:hover {
+    background: white;
+    box-shadow: 0 0 10px white;
+}
+
+.virus {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    font-size: 32px;
+    cursor: pointer;
+    transition: 0.3s;
+    z-index: 10;
+    background: rgba(0,0,0,0.5);
+    border-radius: 50%;
+    padding: 10px;
+    border: 1px solid transparent;
+}
+
+.virus:hover {
+    transform: scale(1.2);
+    border-color: red;
+    box-shadow: 0 0 15px red;
+}
+
+.footer-message {
+    position: fixed;
+    bottom: 15px;
+    left: 20px;
+    font-size: 13px;
+    color: #aaa;
+    z-index: 10;
+    font-style: italic;
+}
+</style>
+</head>
+
+<body>
+
+<h1>DESCOLONIZANDO LA RED</h1>
+<div class="subtitle">Haz clic en los nodos. Activa el virus. Reconstruye la red.</div>
+
+<canvas id="network"></canvas>
+
+<div class="modal" id="modal">
+    <h2 id="modalTitle"></h2>
+    <p id="modalText"></p>
+    <button onclick="closeModal()">Cerrar</button>
+</div>
+
+<div class="virus" onclick="toggleVirus()" id="virusBtn">🦠</div>
+<div class="footer-message">“En la red de la vida, ninguna cultura es un error del sistema.”</div>
+
+<script>
+const canvas = document.getElementById("network");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+let virusActivo = false;
+
+// Se conservan todos tus nodos originales y se añaden 5 nuevos para lograr la simetría de la Chakana.
+const nodes = [
+    {baseX: 200, baseY: 200, title: "Pueblo Aymara", text: "La relacionalidad y la comunidad son base de su cosmovisión.", vx: 0, vy: 0, vertexIndex: 0 }, 
+    {baseX: 500, baseY: 150, title: "Suma Qamaña", text: "Vivir Bien: Buscar el equilibrio entre la tecnología y la vida.", vx: 0, vy: 0, vertexIndex: 1 }, // NUEVO
+    {baseX: 500, baseY: 150, title: "Pueblo Quechua", text: "Organización colectiva y sabiduría ancestral.", vx: 0, vy: 0, vertexIndex: 2 }, 
+    {baseX: 800, baseY: 250, title: "Julian Apaza", text: "Símbolo de resistencia y memoria histórica.", vx: 0, vy: 0, vertexIndex: 5 }, 
+    {baseX: 500, baseY: 150, title: "Taypi", text: "El centro de encuentro, donde convergen diferentes mundos digitales.", vx: 0, vy: 0, vertexIndex: 6 }, // NUEVO
+    {baseX: 1100, baseY: 200, title: "Bartolina Sisa", text: "Liderazgo femenino y lucha anticolonial.", vx: 0, vy: 0, vertexIndex: 8 }, 
+    {baseX: 500, baseY: 150, title: "Pachamama", text: "Respeto integral por nuestro entorno, tanto material como virtual.", vx: 0, vy: 0, vertexIndex: 10 }, // NUEVO
+    {baseX: 350, baseY: 450, title: "Juventud Digital", text: "Puede viralizar prejuicio o conciencia.", vx: 0, vy: 0, vertexIndex: 11 }, 
+    {baseX: 750, baseY: 500, title: "Relacionalidad", text: "Nada existe aislado; todo está conectado.", vx: 0, vy: 0, vertexIndex: 15 }, 
+    {baseX: 500, baseY: 150, title: "Ayni", text: "Reciprocidad: el conocimiento en la red se comparte, no se acapara.", vx: 0, vy: 0, vertexIndex: 16 }, // NUEVO
+    {baseX: 1000, baseY: 420, title: "Interculturalidad", text: "No es tolerar, es convivir en igualdad.", vx: 0, vy: 0, vertexIndex: 17 },
+    {baseX: 500, baseY: 150, title: "Ch'ixi", text: "Nuestra identidad es mixta, manchada y poderosa.", vx: 0, vy: 0, vertexIndex: 19 } // NUEVO
+];
+
+// Vértices geométricos de la Chakana (Cruz Andina)
+const chakanaVertices = [
+    [-1, 3], [1, 3], [1, 2], [2, 2], [2, 1], [3, 1],
+    [3, -1], [2, -1], [2, -2], [1, -2], [1, -3], [-1, -3],
+    [-1, -2], [-2, -2], [-2, -1], [-3, -1], [-3, 1], [-2, 1],
+    [-2, 2], [-1, 2], [-1, 3] // Cerramos la figura
+];
+
+// Inicializar posiciones y velocidades aleatorias para los nodos
+nodes.forEach((node, index) => {
+    node.x = Math.random() * canvas.width;
+    node.y = Math.random() * canvas.height;
+    node.vx = (Math.random() - 0.5) * 15;
+    node.vy = (Math.random() - 0.5) * 15;
+});
+
+const particles = [];
+const numParticles = 180;
+
+// Distribuir partículas a lo largo del perímetro de la Chakana
+function initChakanaParticles() {
+    particles.length = 0;
+    let totalSegments = chakanaVertices.length - 1;
+    let particlesPerSegment = Math.floor(numParticles / totalSegments);
+
+    for (let i = 0; i < totalSegments; i++) {
+        let p1 = chakanaVertices[i];
+        let p2 = chakanaVertices[i+1];
+        
+        for (let j = 0; j < particlesPerSegment; j++) {
+            let t = j / particlesPerSegment;
+            // Coordenadas base relativas a la estructura
+            let cBaseX = p1[0] + (p2[0] - p1[0]) * t;
+            let cBaseY = p1[1] + (p2[1] - p1[1]) * t;
+            
+            particles.push({
+                baseX: cBaseX,
+                baseY: cBaseY,
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                size: Math.random() * 2 + 1.5,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+    }
+}
+
+initChakanaParticles();
+
+function drawSystem() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let time = Date.now() * 0.001;
+
+    // --- 1. DIBUJAR Y ACTUALIZAR CHAKANA ---
+    let scale = Math.min(canvas.width, canvas.height) / 8; // Escala adaptativa
+    let cx = canvas.width / 2;
+    let cy = canvas.height / 2;
+
+    particles.forEach(p => {
+        if (virusActivo) {
+            // Comportamiento Caótico
+            p.x += p.vx;
+            p.y += p.vy;
+            if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+            ctx.fillStyle = "rgba(255, 50, 50, 0.8)";
+        } else {
+            // Comportamiento de Reconstrucción (Relacionalidad)
+            let targetX = cx + p.baseX * scale;
+            let targetY = cy + p.baseY * scale;
+
+            // Ligero efecto de respiración
+            let floatX = Math.sin(time + p.phase) * 3;
+            let floatY = Math.cos(time + p.phase) * 3;
+
+            // Interpolación (Lerp) hacia su posición en la Chakana
+            p.x += ((targetX + floatX) - p.x) * 0.05;
+            p.y += ((targetY + floatY) - p.y) * 0.05;
+
+            // Resetear velocidad por si el virus ataca de nuevo
+            p.vx = (Math.random() - 0.5) * 15;
+            p.vy = (Math.random() - 0.5) * 15;
+            
+            ctx.fillStyle = "rgba(0, 255, 255, 0.8)";
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // --- 2. ALINEAR Y ACTUALIZAR NODOS A LA CRUZ ---
+    nodes.forEach((node, index) => {
+        let vertex = chakanaVertices[node.vertexIndex]; 
+        let currentVertexX = cx + vertex[0] * scale; 
+        let currentVertexY = cy + vertex[1] * scale; 
+
+        if (!virusActivo) {
+            // Reconstrucción de nodos: mover suavemente al vértice designado con efecto flotante
+            node.x += ((currentVertexX + Math.sin(time + index) * 15) - node.x) * 0.05;
+            node.y += ((currentVertexY + Math.cos(time + index) * 15) - node.y) * 0.05;
+
+            // Resetear velocidad de dispersión
+            node.vx = (Math.random() - 0.5) * 15;
+            node.vy = (Math.random() - 0.5) * 15;
+        } else {
+            // Virus activo: aplicar dispersión caótica
+            node.x += node.vx;
+            node.y += node.vy;
+            if(node.x < 0 || node.x > canvas.width) node.vx *= -1;
+            if(node.y < 0 || node.y > canvas.height) node.vy *= -1;
+        }
+    });
+
+    // --- 3. DIBUJAR LÍNEAS DE LA RED ---
+    ctx.strokeStyle = virusActivo ? "rgba(255, 0, 0, 0.4)" : "rgba(0, 255, 255, 0.3)";
+    ctx.lineWidth = 1;
+
+    for(let i=0; i<nodes.length; i++) {
+        for(let j=i+1; j<nodes.length; j++) {
+            // Ahora con 12 nodos, la red de conexiones será mucho más densa y simétrica
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+        }
+    }
+
+    // --- 4. DIBUJAR NODOS ---
+    nodes.forEach(node => {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, 14, 0, Math.PI*2);
+        ctx.fillStyle = virusActivo ? "#8b0000" : "#00ffff";
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = virusActivo ? "red" : "cyan";
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset
+        
+        // Borde interior para darle textura
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
+        ctx.stroke();
+    });
+
+    requestAnimationFrame(drawSystem);
+}
+
+canvas.addEventListener("click", function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    nodes.forEach(node => {
+        const dist = Math.sqrt((mouseX-node.x)**2 + (mouseY-node.y)**2);
+        if(dist < 20) {
+            openModal(node.title, node.text);
+        }
+    });
+});
+
+function openModal(title, text) {
+    document.getElementById("modalTitle").innerText = title;
+    document.getElementById("modalText").innerText = text;
+    document.getElementById("modal").classList.add("active");
+}
+
+function closeModal() {
+    document.getElementById("modal").classList.remove("active");
+}
+
+function toggleVirus() {
+    virusActivo = !virusActivo;
+    const btn = document.getElementById("virusBtn");
+    if(virusActivo) {
+        btn.innerText = "🛑";
+        setTimeout(() => alert("El prejuicio se viralizó. La estructura se fragmenta."), 100);
+    } else {
+        btn.innerText = "🦠";
+        setTimeout(() => alert("Has desconectado el prejuicio. La red andina se reconstruye."), 100);
+    }
+}
+
+drawSystem();
+</script>
+
+</body>
+</html>
